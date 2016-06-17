@@ -1,31 +1,35 @@
 ## TODO
 
-    * add more flexible control over output
+    * more informative warnings
+    * option: skip conflicts
+    * option: same name with local and real addr are not conflicted
     * option: sort sample /etc/hosts by hostnames (first hostname)
     * option: only beautify, no analyze
     * tests!
 
 ## Samples
 
-### Analyze
+### Analyze addresses
 
-    Addresses:
-    195.34.2.40 found on all hosts. Names: storage-1
-    195.34.2.15 found on 2 hosts (...). Names: video-1 cnv-1
-    192.168.14.1 found on 1 hosts (...). Name: data-1 upload-3
-    192.168.14.2 found on 1 host (...). Name: data-2 upload-4
+    ::1              found on all hosts. Multiple entries: ip6-localhost, ip6-loopback, localhost
+    xxx.xxx.xxx.xxx  found on all hosts. Entry: office
+    xxx.xxx.xxx.xxx  found on all hosts. Multiple entries: v-1-1, cnv-v-1-1
+    xxx.xxx.xxx.xxx  found on 1 host: hosts1. Multiple entries: bl, bl1
 
-    Names:
-    storage-1 found on all hosts. Address: ...
-    video-1   found on 3 hosts (...). Addresses: ... ...
+### Analyze names
+
+    office           found on all hosts. Entry: xxx.xxx.xxx.xxx
+    cnv-v-1-1        found on all hosts. Entry: xxx.xxx.xxx.xxx
+    v-1-1            found on all hosts. Entry: xxx.xxx.xxx.xxx
+    bl1              found on 1 host. Multiple entries: xxx.xxx.xxx.xxx, xxx.xxx.xxx.xxx
 
 ### Generate
 
     # loopback interfaces skipped
     # ipv6 skipped
     # real
-    x.x.x.x rec-1
-    x.x.x.x v-1-1, cnv-v-1-1
+    xxx.xxx.xxx.xxx  office
+    xxx.xxx.xxx.xxx  v-1-1 cnv-v-1-1
     # local
-    192.168.1.1 data-1 upload-3
-    192.168.1.2 data-2 upload-4
+    192.168.1.1      bl1    
+    192.168.1.2      bl1    

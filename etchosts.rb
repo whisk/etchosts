@@ -8,7 +8,7 @@ class IPAddr
   @@cidr_local    = IPAddr.new '192.168.0.0/16'
 
   def <=>(anoter)
-    self.to_i <=> anoter.to_i
+    to_i <=> anoter.to_i
   end
 
   def cat
@@ -32,13 +32,12 @@ class EtcHosts
 
   public
 
-  attr_accessor :verbosity
+  attr_accessor :opts
 
   def initialize
-    @verbosity = :info
-
+    @opts = {}
+    @opts[:verbosity] = :info
     @input_files = {}
-
     @names = {}
     @ips = {}
     @files = {}
@@ -46,8 +45,9 @@ class EtcHosts
 
   def run!
     analyze
-    dump_analyze
-    dump_etchosts
+    dump_analyze_names if @opts[:names]
+    dump_analyze_addr if @opts[:addr]
+    dump_etchosts if @opts[:generate]
   end
 
   def add_file(fname)
@@ -59,8 +59,10 @@ class EtcHosts
 
   def analyze
     input_files.each do |fname, fh|
-      debug("Scanning file #{fname}...")
+      verbose("Scanning file #{fname}...")
+      l = t = 0
       fh.readlines.each do |line|
+        l += 1
         # strip comments
         # and split to tokens
         tokens = line.split(/#/, 2).first.split
@@ -68,10 +70,12 @@ class EtcHosts
 
         if validate(tokens)
           add_host(fname, tokens)
+          t += 1
         else
           warn("Invalid entry: #{tokens}")
         end
       end
+      verbose("Read #{l} lines, #{t} tokens")
     end
   end
 
@@ -88,34 +92,36 @@ class EtcHosts
     end
   end
 
-  def dump_analyze
-    output("Addresses:")
-    ips.keys.sort.each do |ip|
-      msg = format('%-15s', ip)
-      if files[ip].size != input_files.size
-        msg += format(' found on %d host(s): %s.', files[ip].size, files[ip].join(', '))
-      else
-        msg += ' found on all hosts'
-      end
-      msg += format(' Names: %s', ips[ip].join(', '))
-      output(msg)
-    end
-
-    output("Names:")
-    names.keys.sort.each do |name|
-      msg = format("%-20s", name)
-      if files[name].size != input_files.size
-        msg += format(' found on %d host(s): %s.', files[name].size, files[name].join(', '))
+  def dump_analyzed_data(data, fmt = '%-15s')
+    data.keys.sort.each do |key|
+      msg = format(fmt, key)
+      if files[key].size != input_files.size
+        msg += format(' found on %d host(s): %s.', files[key].size, files[key].join(', '))
       else
         msg += ' found on all hosts.'
       end
-      msg += format(' Addresses: %s', names[name].join(', '))
+
+      if data[key].size == 1
+        msg += format(' Entry: %s', data[key].first)
+      else
+        msg += format(' Multiple entries: %s', data[key].join(', '))
+      end
       output(msg)
     end
   end
 
+  def dump_analyze_addr
+    output('Addresses:')
+    dump_analyzed_data(ips)
+  end
+
+  def dump_analyze_names
+    output('Names:')
+    dump_analyzed_data(names, '%-24s')
+  end
+
   def dump_etchosts
-    output('Sample /etc/hosts')
+    output('# Sample /etc/hosts compiled from %d files', input_files.size)
     res = { local: {}, real: {}, loopback: {}, ipv6: {} }
     ips.keys.each do |ip|
       res[ip.cat][ip] = ips[ip]
@@ -127,18 +133,19 @@ class EtcHosts
       output("# #{cat}")
       res[cat].keys.sort.each do |ip|
         msg = format('%-16s', ip) + ips[ip].sort.join(' ')
+        msg += ' # NOTE multiple addresses' if ips[ip].map { |e| names[e].size > 1 }.inject(false) { |a, e| a || e}
         output(msg)
       end
     end
   end
 
   def message(level, *msg)
-    print(format(*msg) + "\n") if @@verbosity_levels[verbosity] >= @@verbosity_levels[level]
+    print(format(*msg) + "\n") if @@verbosity_levels[opts[:verbosity]] >= @@verbosity_levels[level]
   end
 
   def output(*msg)
     printf(*msg)
-    print "\n"
+    print("\n")
   end
 
   @@verbosity_levels.keys.each do |l|
@@ -155,12 +162,21 @@ end
 etchosts = EtcHosts.new
 OptionParser.new do |opts|
   opts.banner = 'Usage: etchosts.rb [options] FILE [FILE ...]'
+  opts.on('-n', 'Analyze names') do
+    etchosts.opts[:names] = true
+  end
+  opts.on('-a', 'Analyze addresses') do
+    etchosts.opts[:addr] = true
+  end
+  opts.on('-g', 'Generate sample /etc/hosts') do
+    etchosts.opts[:generate] = true
+  end
   opts.on('-v', '--verbose', 'Run verbosely') do
-    etchosts.verbosity = :verbose
+    etchosts.opts[:verbosity] = :verbose
   end
   opts.on('-d', '--debug', 'Add debug information') do
-    etchosts.verbosity = :debug
-  end  
+    etchosts.opts[:verbosity] = :debug
+  end
 end.parse!
 
 ARGV.each do |fname|
