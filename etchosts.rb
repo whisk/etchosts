@@ -12,15 +12,19 @@ class IPAddr
   end
 
   def cat
-    if @@cidr_loopback === self
+    if @@cidr_loopback.include?(self)
       return :loopback
-    elsif @@cidr_local === self
+    elsif @@cidr_local.include?(self)
       return :local
     elsif ipv6?
       return :ipv6
     else
       return :real
     end
+  end
+
+  def allowed?
+    [:local, :real].include?(cat)
   end
 end
 
@@ -69,23 +73,27 @@ class EtcHosts
         next if tokens.empty?
 
         if validate(tokens)
-          add_host(fname, tokens)
-          t += 1
+          ip = IPAddr.new(tokens.shift)
+          if ip.allowed?
+            add_host(fname, ip, tokens)
+            t += 1
+          else
+            verbose("#{ip} skipped")
+          end
         else
           warn("Invalid entry: #{tokens}")
         end
       end
-      verbose("Read #{l} lines, #{t} tokens")
+      verbose("Read #{l} lines, #{t} tokens added")
     end
   end
 
   private
 
-  def add_host(fname, tokens)
-    ip = IPAddr.new(tokens.shift)
+  def add_host(fname, ip, hostnames)
     files[ip] = (files[ip] ? files[ip] + [fname] : [fname]).uniq
 
-    tokens.each do |name|
+    hostnames.each do |name|
       names[name] = (names[name] ? names[name] + [ip] : [ip]).uniq
       ips[ip] = (ips[ip] ? ips[ip] + [name] : [name]).uniq
       files[name] = (files[name] ? files[name] + [fname] : [fname]).uniq
@@ -121,8 +129,8 @@ class EtcHosts
   end
 
   def dump_etchosts
-    output('# Sample /etc/hosts compiled from %d files', input_files.size)
-    res = { local: {}, real: {}, loopback: {}, ipv6: {} }
+    output('# Sample /etc/hosts compiled from %d files by etchosts.rb', input_files.size)
+    res = { local: {}, real: {} }
     ips.keys.each do |ip|
       res[ip.cat][ip] = ips[ip]
     end
