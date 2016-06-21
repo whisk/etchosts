@@ -133,7 +133,11 @@ class EtcHosts
       output("# #{cat}")
       res[cat].keys.sort.each do |ip|
         msg = format('%-16s', ip) + ips[ip].sort.join(' ')
-        msg += ' # NOTE multiple addresses' if ips[ip].map { |e| names[e].size > 1 }.inject(false) { |a, e| a || e}
+        dups = ips[ip].find_all { |e| names[e].size > 1 }
+        unless dups.empty?
+          msg += ' # WARNING: multiple addresses' 
+          msg += format(' for %s', dups.join(', ')) if ips[ip].size > 1
+        end
         output(msg)
       end
     end
