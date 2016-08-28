@@ -1,5 +1,7 @@
 # etchosts
 
+[![Build Status](https://travis-ci.org/whisk/etchosts.svg?branch=master)](https://travis-ci.org/whisk/etchosts)
+
 Analyze and merge /etc/hosts files from different servers with ease.
 
 ## Synopsis
