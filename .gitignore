@@ -52,6 +52,7 @@ build-iPhoneSimulator/
 # specific
 *-hosts
 *.sh
+tests/**/*.dat
 
 # editor
 *.sublime-*
