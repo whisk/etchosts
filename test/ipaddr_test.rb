@@ -32,5 +32,11 @@ class IPAddrTest < Test::Unit::TestCase
       assert_false IPAddr.new('127.0.0.1').allowed?
       assert_false IPAddr.new('127.0.1.1').allowed?
     end
+
+    should 'be comparable' do
+      assert_equal 1,  IPAddr.new('192.168.0.2') <=> IPAddr.new('192.168.0.1')
+      assert_equal -1, IPAddr.new('8.8.8.8') <=> IPAddr.new('81.177.123.108')
+      assert_equal 0,  IPAddr.new('192.168.0.1') <=> IPAddr.new('192.168.0.1')
+    end
   end
 end
