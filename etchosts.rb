@@ -49,9 +49,16 @@ class EtcHosts
 
   def run!
     analyze
-    dump_analyze_names if @opts[:names]
-    dump_analyze_addr if @opts[:addr]
-    dump_etchosts if @opts[:generate]
+    case @opts[:action]
+    when :n
+      dump_analyze_names
+    when :a
+      dump_analyze_addr
+    when :g
+      dump_etchosts
+    else
+      raise 'Unknow action: ' + @opts[:action]
+    end
   end
 
   def add_file(fname)
@@ -143,7 +150,7 @@ class EtcHosts
         msg = format('%-16s', ip) + ips[ip].sort.join(' ')
         dups = ips[ip].find_all { |e| names[e].size > 1 }
         unless dups.empty?
-          msg += ' # WARNING: multiple addresses' 
+          msg += ' # WARNING: multiple addresses'
           msg += format(' for %s', dups.join(', ')) if ips[ip].size > 1
         end
         output(msg)
@@ -174,20 +181,22 @@ end
 etchosts = EtcHosts.new
 OptionParser.new do |opts|
   opts.banner = 'Usage: etchosts.rb [options] FILE [FILE ...]'
-  opts.on('-n', 'Analyze names') do
-    etchosts.opts[:names] = true
-  end
-  opts.on('-a', 'Analyze addresses') do
-    etchosts.opts[:addr] = true
-  end
-  opts.on('-g', 'Generate sample /etc/hosts') do
-    etchosts.opts[:generate] = true
+
+  etchosts.opts[:action] = :g
+  opts.on('-aACTION',
+    '--action=ACTION',
+    'Action to perform: (g)enerate merged file, analyze (a)ddresses, analyze (n)ames. Default: g') do |a|
+    etchosts.opts[:action] = a[0].to_sym
   end
   opts.on('-v', '--verbose', 'Run verbosely') do
     etchosts.opts[:verbosity] = :verbose
   end
   opts.on('-d', '--debug', 'Add debug information') do
     etchosts.opts[:verbosity] = :debug
+  end
+  opts.on('-h', '--help', 'Prints this help') do
+    puts opts
+    exit
   end
 end.parse!
 
