@@ -11,7 +11,7 @@ Analyze and merge /etc/hosts files from different servers with ease.
     # real
     213.180.193.3   node-1
     81.177.123.98   node-2 node-2.example.com
-    # local
+    # private
     192.168.0.1     master-1 # WARN: multiple addresses
     192.168.0.2     master-1
 
@@ -55,7 +55,7 @@ For manipulations on a single /etc/hosts file see: https://github.com/bjeanes/gh
     # real
     xxx.xxx.xxx.xxx  office
     xxx.xxx.xxx.xxx  v-1-1 cnv-v-1-1
-    # local
+    # private
     192.168.1.1      bl1
     192.168.1.2      bl1
 
@@ -64,6 +64,6 @@ For manipulations on a single /etc/hosts file see: https://github.com/bjeanes/gh
     * more informative warnings
     * tests!
     * option: skip conflicts
-    * option: same name with local and real addr are not conflicted
+    * option: same name with private and real addr are not conflicted
     * option: sort sample /etc/hosts by hostnames (first hostname)
     * option: only beautify, no analyze

@@ -5,7 +5,7 @@ require 'ipaddr'
 
 class IPAddr
   @@cidr_loopback = IPAddr.new '127.0.0.0/8'
-  @@cidr_local    = IPAddr.new '192.168.0.0/16'
+  @@cidr_private  = %w(10.0.0.0/8 172.16.0.0/12 192.168.0.0/16).map { |a| IPAddr.new a }
 
   def <=>(anoter)
     to_i <=> anoter.to_i
@@ -14,8 +14,8 @@ class IPAddr
   def cat
     if @@cidr_loopback.include?(self)
       return :loopback
-    elsif @@cidr_local.include?(self)
-      return :local
+    elsif @@cidr_private.any? { |a| a.include?(self) }
+      return :private
     elsif ipv6?
       return :ipv6
     else
@@ -24,7 +24,7 @@ class IPAddr
   end
 
   def allowed?
-    [:local, :real].include?(cat)
+    [:private, :real].include?(cat)
   end
 end
 
@@ -137,14 +137,14 @@ class EtcHosts
 
   def dump_etchosts
     output('# Sample /etc/hosts compiled from %d files by etchosts.rb', input_files.size)
-    res = { local: {}, real: {} }
+    res = { private: {}, real: {} }
     ips.keys.each do |ip|
       res[ip.cat][ip] = ips[ip]
     end
 
     output('# loopback interfaces skipped')
     output('# ipv6 addresses skipped')
-    [:real, :local].each do |cat|
+    [:real, :private].each do |cat|
       output("# #{cat}")
       res[cat].keys.sort.each do |ip|
         msg = format('%-16s', ip) + ips[ip].sort.join(' ')
